@@ -1,254 +1,160 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Andrey Metrostroi Server</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Russo+One&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            height: 100vh; width: 100vw; overflow: hidden; 
-            background: #000; position: relative;
-        }
-        .background-image {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; object-fit: cover;
-            z-index: 1;
-        }
-        .title {
-            position: absolute; top: 20px; left: 50%;
-            transform: translateX(-50%); color: black;
-            font-size: 56px; font-weight: 900; text-align: center;
-            z-index: 2; white-space: nowrap; padding: 10px 20px;
-            -webkit-text-stroke: 2px white;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
-            font-family: 'Russo One', sans-serif; letter-spacing: 2px;
-        }
-        .loading-container {
-            position: absolute; bottom: 50px; left: 50%;
-            transform: translateX(-50%); width: 700px; z-index: 2;
-        }
-        .loading-bar {
-            width: 100%; height: 32px;
-            background: rgba(0, 0, 0, 0.3); border-radius: 16px;
-            overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-        }
-        .loading-progress {
-            width: 0%; height: 100%;
-            background: linear-gradient(90deg, #bceb5c, #4ab574);
-            transition: width 0.5s ease; position: relative;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .loading-percentage {
-            color: white; font-weight: 900; font-size: 18px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-            letter-spacing: 1px; font-family: 'Orbitron', monospace;
-        }
-        .map-name {
-            position: absolute; bottom: 20px; left: 20px;
-            color: black; font-size: 16px; font-weight: bold;
-            z-index: 2; font-family: 'Press Start 2P', cursive;
-            text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.8);
-            letter-spacing: 0.5px;
-        }
-        .status-text {
-            position: absolute; bottom: 90px; left: 50%;
-            transform: translateX(-50%); color: white;
-            font-size: 14px; text-align: center; z-index: 2;
-            background: rgba(0, 0, 0, 0.5); padding: 5px 10px;
-            border-radius: 5px; min-width: 300px;
-        }
-        audio { display: none; }
-    </style>
+<meta charset="UTF-8">
+<title>Andrey Metrostroi Server</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Russo+One&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+    background:#000;
+    font-family:'Orbitron',sans-serif;
+}
+
+/* Фон */
+.bg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+/* Заголовок */
+.title{
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:'Russo One',sans-serif;
+    font-size:56px;
+    color:black;
+    -webkit-text-stroke:2px white;
+    text-shadow:0 0 15px rgba(255,255,255,.8);
+}
+
+/* Игрок */
+.player{
+    position:absolute;
+    top:20px;
+    right:20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:rgba(0,0,0,.6);
+    padding:10px 14px;
+    border-radius:12px;
+}
+
+.player img{
+    width:64px;
+    height:64px;
+    border-radius:8px;
+}
+
+.player .name{
+    color:#7CFC00;
+    font-size:14px;
+}
+
+/* Загрузка */
+.loader{
+    position:absolute;
+    bottom:50px;
+    left:50%;
+    transform:translateX(-50%);
+    width:700px;
+}
+
+.bar{
+    height:30px;
+    border-radius:15px;
+    overflow:hidden;
+    background:rgba(255,255,255,.15);
+    border:2px solid rgba(255,255,255,.4);
+}
+
+.progress{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#bceb5c,#4ab574);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:width .15s linear;
+}
+
+.progress span{
+    color:white;
+    font-weight:900;
+    text-shadow:2px 2px 4px rgba(0,0,0,.8);
+}
+</style>
 </head>
+
 <body>
-    <img src="./background.jpg" alt="Background" class="background-image" id="bgImage">
-    <div class="title">Andrey Metrostroi Server</div>
-    <div class="map-name" id="mapName">Подключение к серверу...</div>
-    <div class="status-text" id="statusText">Инициализация...</div>
-    <div class="loading-container">
-        <div class="loading-bar">
-            <div class="loading-progress" id="loadingProgress">
-                <div class="loading-percentage" id="loadingPercentage">0%</div>
-            </div>
+
+<img src="./background.jpg" class="bg">
+
+<div class="title">Andrey Metrostroi Server</div>
+
+<div class="player">
+    <img id="avatar" src="./avatar_placeholder.png">
+    <div class="name" id="playerName">Загрузка...</div>
+</div>
+
+<div class="loader">
+    <div class="bar">
+        <div class="progress" id="progress">
+            <span id="percent">0%</span>
         </div>
     </div>
-    <audio id="backgroundMusic" autoplay loop>
-        <source src="./music.mp3" type="audio/mpeg">
-    </audio>
+</div>
 
-    <script>
-        // ============================================
-        // СИСТЕМА СИНХРОНИЗАЦИИ С GMOD
-        // ============================================
-        
-        let lastUpdateTime = 0;
-        let currentProgress = 0;
-        let currentMap = "Загрузка...";
-        let currentStatus = "Подключение...";
-        
-        // Основные функции обновления
-        function SetProgress(percent) {
-            percent = Math.min(Math.max(parseFloat(percent), 0), 100);
-            currentProgress = percent;
-            
-            document.getElementById('loadingProgress').style.width = percent + '%';
-            document.getElementById('loadingPercentage').textContent = Math.round(percent) + '%';
-            
-            console.log('Progress updated:', percent + '%');
-            lastUpdateTime = Date.now();
-        }
-        
-        function SetMap(mapName) {
-            if (mapName && mapName.trim() !== '') {
-                currentMap = mapName;
-                document.getElementById('mapName').textContent = mapName;
-                console.log('Map updated:', mapName);
-            }
-        }
-        
-        function SetStatus(status) {
-            if (status && status.trim() !== '') {
-                currentStatus = status;
-                document.getElementById('statusText').textContent = status;
-                console.log('Status updated:', status);
-            }
-        }
-        
-        // ============================================
-        // ОБРАБОТКА СООБЩЕНИЙ ОТ GMOD
-        // ============================================
-        
-        // Метод 1: window.postMessage (основной)
-        window.addEventListener('message', function(event) {
-            try {
-                if (event.data && event.data.gmod === true) {
-                    console.log('Received GMod message:', event.data);
-                    
-                    const data = event.data;
-                    
-                    if (data.progress !== undefined) {
-                        SetProgress(data.progress);
-                    }
-                    
-                    if (data.map) {
-                        SetMap(data.map);
-                    }
-                    
-                    if (data.status) {
-                        SetStatus(data.status);
-                    }
-                    
-                    // Комплексное обновление
-                    if (data.type === 'update') {
-                        if (data.progress !== undefined) SetProgress(data.progress);
-                        if (data.map) SetMap(data.map);
-                        if (data.status) SetStatus(data.status);
-                    }
-                }
-            } catch (e) {
-                console.error('Error processing message:', e);
-            }
-        });
-        
-        // Метод 2: Прямой вызов из GMod JavaScript
-        window.GModUpdate = function(data) {
-            try {
-                if (typeof data === 'string') {
-                    data = JSON.parse(data);
-                }
-                
-                if (data.progress !== undefined) SetProgress(data.progress);
-                if (data.map) SetMap(data.map);
-                if (data.status) SetStatus(data.status);
-                
-            } catch (e) {
-                console.error('GModUpdate error:', e);
-            }
-        };
-        
-        // ============================================
-        // АВТОМАТИЧЕСКИЙ РЕЖИМ (если нет связи с GMod)
-        // ============================================
-        
-        function startAutoMode() {
-            console.log('Starting auto mode (no GMod connection)');
-            
-            let autoProgress = 0;
-            const autoInterval = setInterval(() => {
-                // Если были обновления от GMod, отключаем авто-режим
-                if (Date.now() - lastUpdateTime < 5000) {
-                    clearInterval(autoInterval);
-                    console.log('Auto mode disabled - GMod connected');
-                    return;
-                }
-                
-                autoProgress += 0.5;
-                if (autoProgress > 100) autoProgress = 100;
-                
-                SetProgress(autoProgress);
-                
-                // Авто-обновление карты
-                if (autoProgress < 30) SetMap("gm_construct");
-                else if (autoProgress < 60) SetMap("gm_flatgrass");
-                else if (autoProgress < 90) SetMap("gm_metrostroi");
-                else SetMap(game.GetMap ? game.GetMap() : "gm_metrostroi_v5");
-                
-                SetStatus("Авто-загрузка: " + Math.round(autoProgress) + "%");
-                
-                if (autoProgress >= 100) {
-                    clearInterval(autoInterval);
-                    SetStatus("Загрузка завершена (авто-режим)");
-                }
-            }, 100);
-        }
-        
-        // ============================================
-        // ИНИЦИАЛИЗАЦИЯ
-        // ============================================
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Andrey Metrostroi Loading Screen v2.0');
-            console.log('Waiting for GMod synchronization...');
-            
-            // Сообщаем GMod, что мы готовы
-            setTimeout(() => {
-                if (window.postMessage) {
-                    window.postMessage({ 
-                        gmod: true, 
-                        type: 'ready',
-                        time: Date.now() 
-                    }, '*');
-                }
-            }, 1000);
-            
-            // Запускаем авто-режим через 3 секунды, если нет связи
-            setTimeout(startAutoMode, 3000);
-            
-            // Музыка
-            const music = document.getElementById('backgroundMusic');
-            music.volume = 0.3;
-            music.play().catch(() => {
-                document.addEventListener('click', () => music.play(), { once: true });
-            });
-            
-            // Отладочные команды в консоли
-            window.debugLoading = {
-                setProgress: SetProgress,
-                setMap: SetMap,
-                setStatus: SetStatus,
-                getState: () => ({ progress: currentProgress, map: currentMap, status: currentStatus })
-            };
-            
-            console.log('Debug commands available: debugLoading.setProgress(50), debugLoading.setMap("test")');
-        });
-        
-        // Экспортируем функции для GMod
-        window.SetProgress = SetProgress;
-        window.SetMap = SetMap;
-        window.SetStatus = SetStatus;
-    </script>
+<script>
+/* ================= URL PARAMS ================= */
+
+const params = new URLSearchParams(window.location.search);
+const steamid = params.get("steamid");
+const name = params.get("name");
+
+if(name){
+    document.getElementById("playerName").textContent = decodeURIComponent(name);
+}
+
+if(steamid){
+    document.getElementById("avatar").src =
+        "https://steamcommunity.com/profiles/" + steamid + "/avatar";
+}
+
+/* ================= GMOD PROGRESS ================= */
+
+let total = 0;
+let needed = 0;
+let smoothPercent = 0;
+
+function update(){
+    if(total <= 0) return;
+
+    const real = ((total - needed) / total) * 100;
+    smoothPercent += (real - smoothPercent) * 0.15;
+
+    const p = Math.floor(smoothPercent);
+    document.getElementById("progress").style.width = p + "%";
+    document.getElementById("percent").textContent = p + "%";
+}
+
+window.SetFilesTotal = t => total = t;
+window.SetFilesNeeded = n => { needed = n; update(); };
+
+setInterval(update, 50);
+</script>
+
 </body>
 </html>
