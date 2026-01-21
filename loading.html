@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Andrey Metrostroi Server</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Russo+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Press+Start+2P&family=Russo+One&display=swap" rel="stylesheet">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -63,6 +63,17 @@ body{
     font-size:14px;
 }
 
+/* Название карты */
+.map{
+    position:absolute;
+    bottom:20px;
+    left:20px;
+    font-family:'Press Start 2P',cursive;
+    font-size:14px;
+    color:black;
+    text-shadow:2px 2px 0 rgba(255,255,255,.85);
+}
+
 /* Загрузка */
 .loader{
     position:absolute;
@@ -87,7 +98,6 @@ body{
     display:flex;
     align-items:center;
     justify-content:center;
-    transition:width .15s linear;
 }
 
 .progress span{
@@ -104,11 +114,16 @@ body{
 
 <div class="title">Andrey Metrostroi Server</div>
 
+<!-- Игрок -->
 <div class="player">
     <img id="avatar" src="./avatar_placeholder.png">
     <div class="name" id="playerName">Загрузка...</div>
 </div>
 
+<!-- Карта -->
+<div class="map" id="mapName">Загрузка карты...</div>
+
+<!-- Загрузка -->
 <div class="loader">
     <div class="bar">
         <div class="progress" id="progress">
@@ -117,43 +132,62 @@ body{
     </div>
 </div>
 
+<!-- Музыка -->
+<audio id="music" autoplay loop>
+    <source src="https://raw.githubusercontent.com/Andrey8920/ANDREY-METROSTROI-SERVER-2/refs/heads/main/music.mp3" type="audio/mpeg">
+</audio>
+
 <script>
-/* ================= URL PARAMS ================= */
+/* ===== URL параметры (ник + будущий аватар) ===== */
 
 const params = new URLSearchParams(window.location.search);
-const steamid = params.get("steamid");
 const name = params.get("name");
+const avatar = params.get("avatar"); // для Lua (Base64)
 
 if(name){
     document.getElementById("playerName").textContent = decodeURIComponent(name);
 }
 
-if(steamid){
-    document.getElementById("avatar").src =
-        "https://steamcommunity.com/profiles/" + steamid + "/avatar";
+if(avatar){
+    document.getElementById("avatar").src = avatar;
 }
 
-/* ================= GMOD PROGRESS ================= */
+/* ===== Плавный прогресс ===== */
 
 let total = 0;
 let needed = 0;
-let smoothPercent = 0;
+let smooth = 0;
 
-function update(){
+function updateProgress(){
     if(total <= 0) return;
 
     const real = ((total - needed) / total) * 100;
-    smoothPercent += (real - smoothPercent) * 0.15;
+    smooth += (real - smooth) * 0.12;
 
-    const p = Math.floor(smoothPercent);
+    const p = Math.floor(smooth);
     document.getElementById("progress").style.width = p + "%";
     document.getElementById("percent").textContent = p + "%";
 }
 
 window.SetFilesTotal = t => total = t;
-window.SetFilesNeeded = n => { needed = n; update(); };
+window.SetFilesNeeded = n => { needed = n; };
 
-setInterval(update, 50);
+window.GameDetails = function(
+    servername,
+    serverurl,
+    mapname
+){
+    document.getElementById("mapName").textContent = mapname;
+};
+
+setInterval(updateProgress, 50);
+
+/* Музыка (фикс автоплея Chromium) */
+const music = document.getElementById("music");
+music.volume = 0.3;
+music.play().catch(()=>{
+    document.addEventListener("click",()=>music.play(),{once:true});
+});
 </script>
 
 </body>
