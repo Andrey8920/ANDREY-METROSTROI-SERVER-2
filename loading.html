@@ -132,10 +132,9 @@
 
     <script>
         // ============================================
-        // ОСНОВНЫЕ ФУНКЦИИ ДЛЯ GMOD
+        // ОСНОВНЫЕ ФУНКЦИИ
         // ============================================
         
-        // Обновление прогресса (вызывается из GMod)
         function SetProgress(percent) {
             const progress = Math.min(Math.max(percent, 0), 100);
             const loadingProgress = document.getElementById('loadingProgress');
@@ -143,120 +142,90 @@
             
             loadingProgress.style.width = progress + '%';
             loadingPercentage.textContent = Math.round(progress) + '%';
-            console.log('Progress updated:', progress + '%');
+            console.log('Progress:', progress + '%');
         }
         
-        // Установка названия карты (вызывается из GMod)
         function SetMap(mapName) {
             if (mapName && mapName !== '') {
                 document.getElementById('mapName').textContent = mapName;
-                console.log('Map set to:', mapName);
-            }
-        }
-        
-        // Установка статуса (вызывается из GMod)
-        function SetStatus(text) {
-            console.log('Status:', text);
-        }
-        
-        // ============================================
-        // СИСТЕМА ОБРАБОТКИ СООБЩЕНИЙ ОТ GMOD
-        // ============================================
-        
-        // Обработчик сообщений от GMod через window.postMessage
-        window.addEventListener('message', function(event) {
-            // Проверяем, что сообщение от Garry's Mod
-            if (event.data && event.data.gmod) {
-                console.log('Received message from GMod:', event.data);
-                
-                const data = event.data;
-                
-                if (data.type === 'progress') {
-                    SetProgress(data.value);
-                } 
-                else if (data.type === 'map') {
-                    SetMap(data.value);
-                }
-                else if (data.type === 'status') {
-                    SetStatus(data.value);
-                }
-                else if (data.type === 'setMap') {
-                    SetMap(data.map);
-                }
-                else if (data.type === 'setProgress') {
-                    SetProgress(data.progress);
-                }
-            }
-        });
-        
-        // Альтернативный метод: обработка сообщений в URL
-        function checkURLForCommands() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const progress = urlParams.get('progress');
-                const map = urlParams.get('map');
-                
-                if (progress) {
-                    SetProgress(parseFloat(progress));
-                }
-                if (map) {
-                    SetMap(map);
-                }
-            } catch(e) {
-                console.log('URL parsing error:', e);
+                console.log('Map:', mapName);
             }
         }
         
         // ============================================
-        // ИНИЦИАЛИЗАЦИЯ
+        // АВТОМАТИЧЕСКАЯ ЗАГРУЗКА
         // ============================================
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Проверяем параметры URL
-            checkURLForCommands();
+            // 1. Автозаполнение полоски
+            let autoProgress = 0;
+            const autoInterval = setInterval(() => {
+                autoProgress += 0.3;
+                if (autoProgress > 100) {
+                    autoProgress = 100;
+                    clearInterval(autoInterval);
+                }
+                SetProgress(autoProgress);
+            }, 50);
             
-            // Автовоспроизведение музыки
+            // 2. Чтение параметров из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Карта из URL
+            const mapFromUrl = urlParams.get('map');
+            if (mapFromUrl) {
+                SetMap(mapFromUrl);
+            } else {
+                SetMap("gm_metrostroi");
+            }
+            
+            // Прогресс из URL (перезаписывает авто-прогресс)
+            const progressFromUrl = urlParams.get('progress');
+            if (progressFromUrl) {
+                const progress = parseFloat(progressFromUrl);
+                if (!isNaN(progress)) {
+                    clearInterval(autoInterval);
+                    SetProgress(progress);
+                }
+            }
+            
+            // 3. Автоматическое обновление параметров каждую секунду
+            setInterval(() => {
+                const newParams = new URLSearchParams(window.location.search);
+                const newProgress = newParams.get('progress');
+                const newMap = newParams.get('map');
+                
+                if (newProgress) {
+                    const progress = parseFloat(newProgress);
+                    if (!isNaN(progress)) {
+                        SetProgress(progress);
+                    }
+                }
+                
+                if (newMap) {
+                    SetMap(newMap);
+                }
+            }, 1000);
+            
+            // 4. Автовоспроизведение музыки
             const music = document.getElementById('backgroundMusic');
-            music.play().catch(function(error) {
-                console.log("Автовоспроизведение музыки заблокировано");
-                // Запуск по клику
+            music.play().catch(function() {
                 document.body.addEventListener('click', function() {
                     music.play();
                 }, { once: true });
             });
             
-            // Обработка ошибок изображения
+            // 5. Обработка ошибок изображения
             document.getElementById('bgImage').onerror = function() {
-                console.error("Ошибка загрузки изображения");
                 document.body.style.background = '#000';
             };
             
-            // Тестовый режим: симуляция загрузки
-            // УДАЛИТЬ ЭТО В ПРОДАКШЕНЕ!
-            if (window.location.search.indexOf('test') !== -1) {
-                console.log('Тестовый режим включен');
-                let testProgress = 0;
-                const testInterval = setInterval(() => {
-                    testProgress += 0.5;
-                    SetProgress(testProgress);
-                    
-                    if (testProgress >= 100) {
-                        clearInterval(testInterval);
-                        SetMap("gm_metrostroi_v5");
-                    }
-                }, 30);
-            }
-            
-            // Сообщаем GMod, что мы готовы
-            console.log('Metrostroi Loading Screen ready');
+            console.log('Metrostroi Loading Screen ready!');
         });
         
-        // Экспортируем функции в глобальную область видимости
-        window.GModLoading = {
-            SetProgress: SetProgress,
-            SetMap: SetMap,
-            SetStatus: SetStatus
-        };
+        // Экспортируем функции
+        window.SetProgress = SetProgress;
+        window.SetMap = SetMap;
     </script>
 </body>
 </html>
