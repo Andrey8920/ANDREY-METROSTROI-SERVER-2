@@ -39,30 +39,6 @@ body{
     text-shadow:0 0 15px rgba(255,255,255,.8);
 }
 
-/* Игрок */
-.player{
-    position:absolute;
-    top:20px;
-    right:20px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    background:rgba(0,0,0,.6);
-    padding:10px 14px;
-    border-radius:12px;
-}
-
-.player img{
-    width:64px;
-    height:64px;
-    border-radius:8px;
-}
-
-.player .name{
-    color:#7CFC00;
-    font-size:14px;
-}
-
 /* Название карты */
 .map{
     position:absolute;
@@ -114,12 +90,6 @@ body{
 
 <div class="title">Andrey Metrostroi Server</div>
 
-<!-- Игрок -->
-<div class="player">
-    <img id="avatar" src="./avatar_placeholder.png">
-    <div class="name" id="playerName">Загрузка...</div>
-</div>
-
 <!-- Карта -->
 <div class="map" id="mapName">Загрузка карты...</div>
 
@@ -138,21 +108,7 @@ body{
 </audio>
 
 <script>
-/* ===== URL параметры (ник + будущий аватар) ===== */
-
-const params = new URLSearchParams(window.location.search);
-const name = params.get("name");
-const avatar = params.get("avatar"); // для Lua (Base64)
-
-if(name){
-    document.getElementById("playerName").textContent = decodeURIComponent(name);
-}
-
-if(avatar){
-    document.getElementById("avatar").src = avatar;
-}
-
-/* ===== Плавный прогресс ===== */
+/* ===== Плавный прогресс (без дёрганья) ===== */
 
 let total = 0;
 let needed = 0;
@@ -170,7 +126,7 @@ function updateProgress(){
 }
 
 window.SetFilesTotal = t => total = t;
-window.SetFilesNeeded = n => { needed = n; };
+window.SetFilesNeeded = n => needed = n;
 
 window.GameDetails = function(
     servername,
@@ -182,7 +138,7 @@ window.GameDetails = function(
 
 setInterval(updateProgress, 50);
 
-/* Музыка (фикс автоплея Chromium) */
+/* Фикс автоплея Chromium */
 const music = document.getElementById("music");
 music.volume = 0.3;
 music.play().catch(()=>{
