@@ -17,6 +17,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
+            background: #000;
         }
         
         .background-image {
@@ -99,23 +100,20 @@
             text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.8);
             letter-spacing: 0.5px;
         }
-        
-        audio {
-            display: none;
-        }
     </style>
 </head>
 <body>
     <!-- Фоновая картинка -->
-    <img src="background.jpg" 
+    <img src="./background.jpg" 
          alt="Metrostroi Background" 
-         class="background-image">
+         class="background-image"
+         id="bgImage">
     
     <!-- Заголовок -->
     <div class="title">Andrey Metrostroi Server</div>
     
     <!-- Название карты -->
-    <div class="map-name" id="mapName">gm_metrostroi</div>
+    <div class="map-name" id="mapName">Загрузка...</div>
     
     <!-- Полоска загрузки -->
     <div class="loading-container">
@@ -128,37 +126,137 @@
     
     <!-- Фоновая музыка -->
     <audio id="backgroundMusic" autoplay loop>
-        <source src="music.mp3" type="audio/mpeg">
+        <source src="./music.mp3" type="audio/mpeg">
+        Ваш браузер не поддерживает аудио.
     </audio>
 
     <script>
-        // Функции для GMod
-        window.SetProgress = function(percent) {
+        // ============================================
+        // ОСНОВНЫЕ ФУНКЦИИ ДЛЯ GMOD
+        // ============================================
+        
+        // Обновление прогресса (вызывается из GMod)
+        function SetProgress(percent) {
             const progress = Math.min(Math.max(percent, 0), 100);
             const loadingProgress = document.getElementById('loadingProgress');
             const loadingPercentage = document.getElementById('loadingPercentage');
             
             loadingProgress.style.width = progress + '%';
             loadingPercentage.textContent = Math.round(progress) + '%';
-        };
+            console.log('Progress updated:', progress + '%');
+        }
         
-        window.SetMap = function(mapName) {
-            document.getElementById('mapName').textContent = mapName;
-        };
+        // Установка названия карты (вызывается из GMod)
+        function SetMap(mapName) {
+            if (mapName && mapName !== '') {
+                document.getElementById('mapName').textContent = mapName;
+                console.log('Map set to:', mapName);
+            }
+        }
         
-
+        // Установка статуса (вызывается из GMod)
+        function SetStatus(text) {
+            console.log('Status:', text);
+        }
         
-        // Инициализация
+        // ============================================
+        // СИСТЕМА ОБРАБОТКИ СООБЩЕНИЙ ОТ GMOD
+        // ============================================
+        
+        // Обработчик сообщений от GMod через window.postMessage
+        window.addEventListener('message', function(event) {
+            // Проверяем, что сообщение от Garry's Mod
+            if (event.data && event.data.gmod) {
+                console.log('Received message from GMod:', event.data);
+                
+                const data = event.data;
+                
+                if (data.type === 'progress') {
+                    SetProgress(data.value);
+                } 
+                else if (data.type === 'map') {
+                    SetMap(data.value);
+                }
+                else if (data.type === 'status') {
+                    SetStatus(data.value);
+                }
+                else if (data.type === 'setMap') {
+                    SetMap(data.map);
+                }
+                else if (data.type === 'setProgress') {
+                    SetProgress(data.progress);
+                }
+            }
+        });
+        
+        // Альтернативный метод: обработка сообщений в URL
+        function checkURLForCommands() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const progress = urlParams.get('progress');
+                const map = urlParams.get('map');
+                
+                if (progress) {
+                    SetProgress(parseFloat(progress));
+                }
+                if (map) {
+                    SetMap(map);
+                }
+            } catch(e) {
+                console.log('URL parsing error:', e);
+            }
+        }
+        
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+        
         document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем параметры URL
+            checkURLForCommands();
+            
+            // Автовоспроизведение музыки
             const music = document.getElementById('backgroundMusic');
-            music.play().catch(function() {
-                document.addEventListener('click', function() {
+            music.play().catch(function(error) {
+                console.log("Автовоспроизведение музыки заблокировано");
+                // Запуск по клику
+                document.body.addEventListener('click', function() {
                     music.play();
                 }, { once: true });
             });
             
-
+            // Обработка ошибок изображения
+            document.getElementById('bgImage').onerror = function() {
+                console.error("Ошибка загрузки изображения");
+                document.body.style.background = '#000';
+            };
+            
+            // Тестовый режим: симуляция загрузки
+            // УДАЛИТЬ ЭТО В ПРОДАКШЕНЕ!
+            if (window.location.search.indexOf('test') !== -1) {
+                console.log('Тестовый режим включен');
+                let testProgress = 0;
+                const testInterval = setInterval(() => {
+                    testProgress += 0.5;
+                    SetProgress(testProgress);
+                    
+                    if (testProgress >= 100) {
+                        clearInterval(testInterval);
+                        SetMap("gm_metrostroi_v5");
+                    }
+                }, 30);
+            }
+            
+            // Сообщаем GMod, что мы готовы
+            console.log('Metrostroi Loading Screen ready');
         });
+        
+        // Экспортируем функции в глобальную область видимости
+        window.GModLoading = {
+            SetProgress: SetProgress,
+            SetMap: SetMap,
+            SetStatus: SetStatus
+        };
     </script>
 </body>
 </html>
